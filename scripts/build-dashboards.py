@@ -392,7 +392,7 @@ def infrastructure():
                thresholds=[{"color": GREEN, "value": None}, {"color": RED, "value": 1}]), 4, 4)
     L.add(stat("Restarts (time range)", prom(f"round(sum(increase(kube_pod_container_status_restarts_total{{{ns}}}[$__range])))", instant=True), decimals=0,
                thresholds=[{"color": GREEN, "value": None}, {"color": AMBER, "value": 1}, {"color": RED, "value": 5}]), 4, 4)
-    L.add(stat("OOMKilled (last restart)", prom(f'sum(kube_pod_container_status_last_terminated_reason{{{ns}, reason="OOMKilled"}})', instant=True),
+    L.add(stat("OOMKilled (last restart)", prom(f'sum(kube_pod_container_status_last_terminated_reason{{{ns}, reason="OOMKilled"}}) or vector(0)', instant=True),
                desc="Containers whose last restart was caused by hitting their memory limit.",
                thresholds=[{"color": GREEN, "value": None}, {"color": RED, "value": 1}]), 4, 4)
     L.add(stat("Node memory used", prom("1 - sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes)", instant=True),

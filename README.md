@@ -3,6 +3,9 @@
 The VijayBank net-banking microservices (fictional bank, demo data only) running on a local
 **kind** cluster, packaged as **Helm** charts and deployed by **Argo CD** (GitOps).
 
+**Full documentation: [docs/GUIDE.md](docs/GUIDE.md)** — architecture, request flow, setup, Helm,
+secrets, Argo CD, observability, operations and troubleshooting.
+
 The application code is a copy of the Docker Compose version
 ([Banking-observability](https://github.com/vijaykumarbirru/Banking-observability)); this repo
 adds what is needed to run it on Kubernetes.
@@ -54,6 +57,8 @@ helm upgrade --install argocd argo/argo-cd --version 10.17.2 -n argocd --create-
 # 5. Hand everything else to Argo CD
 kubectl apply -f argocd/root-app.yaml
 ```
+
+Check it with `python3 scripts/smoke-test.py` (19 end-to-end checks through Traefik).
 
 Argo CD then creates the data stores, the 14 service apps and the seed Job, and keeps them
 in sync with `main`. Without Argo CD, `./scripts/helm-install-all.sh` installs the same charts

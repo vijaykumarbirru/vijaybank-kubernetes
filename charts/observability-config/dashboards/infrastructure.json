@@ -449,7 +449,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "sum(kube_pod_container_status_last_terminated_reason{namespace=~\"$namespace\", reason=\"OOMKilled\"})",
+          "expr": "sum(kube_pod_container_status_last_terminated_reason{namespace=~\"$namespace\", reason=\"OOMKilled\"}) or vector(0)",
           "legendFormat": "",
           "instant": true,
           "range": false,
