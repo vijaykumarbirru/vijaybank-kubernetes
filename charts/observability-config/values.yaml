@@ -1,0 +1,5 @@
+# Objects that tell Prometheus / Grafana what to collect and show.
+collector:
+  # App metrics + span metrics exposed by the OTel Collector's Prometheus exporter.
+  serviceName: otel-collector
+  port: promexporter

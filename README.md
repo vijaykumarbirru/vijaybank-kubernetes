@@ -12,7 +12,8 @@ kind cluster "vijaybank" (1 control-plane + 2 workers)          local registry l
 ├─ traefik      Traefik + Gateway API  → http://bank.localhost, argocd.localhost, rabbitmq.localhost
 ├─ argocd       Argo CD: syncs everything below from this Git repo
 ├─ middleware   PostgreSQL, Redis, RabbitMQ, MongoDB (StatefulSets)
-└─ vijaybank    13 services + web frontend + seed Job (one Helm chart / Argo app each)
+├─ vijaybank    13 services + web frontend + seed Job (one Helm chart / Argo app each)
+└─ observability OpenTelemetry Collector, Jaeger (traces), Prometheus Operator + Prometheus + Grafana
 ```
 
 ## Layout
@@ -60,6 +61,9 @@ with plain Helm.
 |---|---|
 | http://bank.localhost | Net banking. Log in as `VB100001` … `VB100020` (demo password printed by the seed Job); OTPs are in the dev inbox |
 | http://argocd.localhost | Argo CD. User `admin`, password: `kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' \| base64 -d` |
+| http://grafana.localhost | Grafana (no login): Prometheus, Jaeger and read-only Postgres data sources |
+| http://prometheus.localhost | Prometheus |
+| http://jaeger.localhost | Jaeger: every request as a trace (Traefik → nginx → gateway → services → data stores) |
 | http://rabbitmq.localhost | RabbitMQ UI. User `vijaybank`, password: `kubectl -n middleware get secret rabbitmq-credentials -o jsonpath='{.data.password}' \| base64 -d` |
 
 `*.localhost` resolves to 127.0.0.1 in browsers and curl.

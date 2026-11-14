@@ -1,0 +1,17 @@
+# Prometheus scrapes the app + span metrics the collector exposes on :8889.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: otel-collector-app-metrics
+  labels:
+    app.kubernetes.io/part-of: vijaybank
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: opentelemetry-collector
+      app.kubernetes.io/instance: {{ .Values.collector.serviceName }}
+      component: standalone-collector
+  endpoints:
+    - port: {{ .Values.collector.port }}
+      interval: 15s
+      honorLabels: true          # keep the services' own job / instance labels

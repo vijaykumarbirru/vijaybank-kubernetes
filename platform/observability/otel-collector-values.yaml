@@ -1,0 +1,79 @@
+# OpenTelemetry Collector - single entry point for app telemetry
+# (services send to otel-collector.observability.svc.cluster.local:4318).
+#   traces  -> Jaeger + span metrics
+#   metrics -> Prometheus exporter on :8889 (scraped from step 4.2)
+fullnameOverride: otel-collector
+mode: deployment
+image:
+  repository: otel/opentelemetry-collector-contrib
+
+resources:
+  requests: { cpu: 50m, memory: 128Mi }
+  limits: { memory: 512Mi }
+
+# k8s_attributes reads pods / nodes / ReplicaSets to tag telemetry with where it came from.
+clusterRole:
+  create: true
+  rules:
+    - apiGroups: [""]
+      resources: [pods, namespaces, nodes]
+      verbs: [get, list, watch]
+    - apiGroups: [apps]
+      resources: [replicasets, deployments]
+      verbs: [get, list, watch]
+
+ports:
+  jaeger-compact: { enabled: false }
+  jaeger-thrift: { enabled: false }
+  jaeger-grpc: { enabled: false }
+  zipkin: { enabled: false }
+  promexporter:
+    enabled: true
+    containerPort: 8889
+    servicePort: 8889
+    protocol: TCP
+
+# Replaces the chart's default config completely.
+alternateConfig:
+  extensions:
+    health_check: { endpoint: "${env:MY_POD_IP}:13133" }
+  receivers:
+    otlp:
+      protocols:
+        grpc: { endpoint: "${env:MY_POD_IP}:4317" }
+        http: { endpoint: "${env:MY_POD_IP}:4318" }
+  processors:
+    memory_limiter: { check_interval: 1s, limit_percentage: 80, spike_limit_percentage: 25 }
+    # Adds pod, node, namespace and deployment to every span and metric.
+    k8s_attributes:
+      auth_type: serviceAccount
+      extract:
+        metadata: [k8s.namespace.name, k8s.pod.name, k8s.pod.uid, k8s.node.name, k8s.deployment.name]
+      pod_association:
+        - sources: [{ from: connection }]
+    batch: { timeout: 5s }
+  connectors:
+    # Rate / errors / duration per service and endpoint, whatever the language (APM dashboard).
+    span_metrics:
+      exemplars: { enabled: true }
+  exporters:
+    debug: { verbosity: basic }
+    otlp_grpc/jaeger:
+      endpoint: jaeger.observability.svc.cluster.local:4317
+      tls: { insecure: true }
+    prometheus:
+      endpoint: "${env:MY_POD_IP}:8889"
+      enable_open_metrics: true             # needed for exemplars (metric -> trace links)
+      resource_to_telemetry_conversion:
+        enabled: true                       # service / pod labels on every metric
+  service:
+    extensions: [health_check]
+    pipelines:
+      traces:
+        receivers: [otlp]
+        processors: [memory_limiter, k8s_attributes, batch]
+        exporters: [debug, otlp_grpc/jaeger, span_metrics]
+      metrics:
+        receivers: [otlp, span_metrics]
+        processors: [memory_limiter, k8s_attributes, batch]
+        exporters: [debug, prometheus]

@@ -1,0 +1,72 @@
+# Jaeger v2 - stores traces and shows them at http://jaeger.localhost
+# Pinned to chart 4.13.1 = Jaeger 2.20: Jaeger 2.21+ dropped the v1 HTTP API
+# (/api/services, /api/traces) that Grafana's Jaeger data source uses.
+fullnameOverride: jaeger
+
+jaeger:
+  resources:
+    requests: { cpu: 25m, memory: 128Mi }
+    limits: { memory: 768Mi }
+  httproute:
+    enabled: true
+    parentRefs: [{ name: main, namespace: traefik }]
+    hostnames: [jaeger.localhost]
+  # Traces live on a volume (Badger), so they survive pod restarts.
+  extraVolumes:
+    - name: badger
+      persistentVolumeClaim: { claimName: jaeger-badger }
+  extraVolumeMounts:
+    - { name: badger, mountPath: /badger }
+
+extraObjects:
+  - apiVersion: v1
+    kind: PersistentVolumeClaim
+    metadata:
+      name: jaeger-badger
+    spec:
+      accessModes: [ReadWriteOnce]
+      resources:
+        requests:
+          storage: 2Gi
+
+# Full Jaeger v2 config: OTLP in -> Badger. The "Monitor" tab reads span metrics from
+# Prometheus (installed in step 4.2; until then that tab is empty).
+userconfig:
+  service:
+    extensions: [jaeger_storage, jaeger_query, healthcheckv2]
+    pipelines:
+      traces:
+        receivers: [otlp]
+        processors: [batch]
+        exporters: [jaeger_storage_exporter]
+  extensions:
+    healthcheckv2:
+      use_v2: true
+      http: { endpoint: 0.0.0.0:13133 }
+    jaeger_query:
+      storage:
+        traces: badger_store
+        metrics: promstore
+    jaeger_storage:
+      backends:
+        badger_store:
+          badger:
+            directories: { keys: /badger/keys, values: /badger/values }
+            ephemeral: false
+            ttl: { spans: 168h }        # keep one week
+      metric_backends:
+        promstore:
+          prometheus:
+            endpoint: http://kps-prometheus.observability.svc.cluster.local:9090
+            normalize_calls: true
+            normalize_duration: true
+  receivers:
+    otlp:
+      protocols:
+        grpc: { endpoint: 0.0.0.0:4317 }
+        http: { endpoint: 0.0.0.0:4318 }
+  processors:
+    batch: {}
+  exporters:
+    jaeger_storage_exporter:
+      trace_storage: badger_store

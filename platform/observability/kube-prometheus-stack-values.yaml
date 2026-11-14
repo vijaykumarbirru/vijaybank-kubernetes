@@ -1,0 +1,142 @@
+# kube-prometheus-stack = Prometheus Operator + Prometheus + Grafana + kube-state-metrics
+# + node-exporter. Trimmed for a local cluster: no Alertmanager (Grafana alerting is used,
+# as in the Docker version), no built-in alert rules, no built-in dashboards.
+fullnameOverride: kps            # services: kps-prometheus, kps-grafana
+
+# kind runs these control-plane parts bound to localhost: Prometheus can't scrape them.
+kubeEtcd: { enabled: false }
+kubeControllerManager: { enabled: false }
+kubeScheduler: { enabled: false }
+kubeProxy: { enabled: false }
+
+alertmanager: { enabled: false }
+defaultRules: { create: false }
+
+prometheus:
+  route:
+    main:
+      enabled: true
+      hostnames: [prometheus.localhost]
+      parentRefs: [{ name: main, namespace: traefik }]
+  prometheusSpec:
+    retention: 3d
+    scrapeInterval: 15s
+    enableFeatures: [exemplar-storage]      # metric -> trace links
+    # Use ServiceMonitors / PodMonitors / Probes / rules from every namespace,
+    # not only the ones labelled for this chart.
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    probeSelectorNilUsesHelmValues: false
+    resources:
+      requests: { cpu: 100m, memory: 400Mi }
+      limits: { memory: 1200Mi }
+    storageSpec:                            # keep metrics across pod restarts
+      volumeClaimTemplate:
+        spec:
+          accessModes: [ReadWriteOnce]
+          resources: { requests: { storage: 4Gi } }
+
+grafana:
+  defaultDashboardsEnabled: false          # only the VijayBank dashboards
+  route:
+    main:
+      enabled: true
+      hostnames: [grafana.localhost]
+      parentRefs: [{ name: main, namespace: traefik }]
+  # Local lab only: no login screen, everyone is admin (same as the Docker version).
+  grafana.ini:
+    server: { root_url: http://grafana.localhost }
+    auth: { disable_login_form: true }
+    auth.anonymous: { enabled: true, org_role: Admin }
+    feature_toggles: { enable: traceToMetrics }
+  persistence: { enabled: false }
+  resources:                               # Grafana 13 builds search indexes: 384Mi was OOMKilled
+    requests: { cpu: 25m, memory: 256Mi }
+    limits: { memory: 768Mi }
+  # Password of the read-only Postgres user, from a Secret made by scripts/create-secrets.sh.
+  envValueFrom:
+    PG_RO_PASSWORD:
+      secretKeyRef: { name: grafana-postgres, key: password }
+  sidecar:
+    dashboards:
+      enabled: true
+      searchNamespace: ALL                  # ConfigMaps labelled grafana_dashboard=1
+      folderAnnotation: grafana_folder
+      provider: { foldersFromFilesStructure: true }
+    datasources:
+      exemplarTraceIdDestinations:          # exemplar dots on graphs open the trace in Jaeger
+        datasourceUid: jaeger
+        traceIdLabelName: trace_id
+        urlDisplayLabel: View trace
+  additionalDataSources:
+    - name: Jaeger
+      uid: jaeger
+      type: jaeger
+      url: http://jaeger.observability.svc.cluster.local:16686
+      jsonData:
+        tracesToMetrics:                    # span -> RED metrics of that service
+          datasourceUid: prometheus
+          tags: [{ key: service.name, value: service_name }]
+          queries:
+            - name: Request rate
+              query: sum(rate(traces_span_metrics_calls_total{$$__tags}[5m]))
+            - name: Error rate
+              query: sum(rate(traces_span_metrics_calls_total{$$__tags, status_code="STATUS_CODE_ERROR"}[5m]))
+        nodeGraph: { enabled: true }
+    # Business data: read-only access to the bank databases (user grafana_ro), same uids as Docker.
+    - name: "PG Transfers"
+      uid: pg-transfer
+      type: grafana-postgresql-datasource
+      url: postgres.middleware.svc.cluster.local:5432
+      user: grafana_ro
+      jsonData: { database: transfer, sslmode: disable, postgresVersion: 1600 }
+      secureJsonData: { password: "$PG_RO_PASSWORD" }
+    - name: "PG Payments"
+      uid: pg-payment
+      type: grafana-postgresql-datasource
+      url: postgres.middleware.svc.cluster.local:5432
+      user: grafana_ro
+      jsonData: { database: payment, sslmode: disable, postgresVersion: 1600 }
+      secureJsonData: { password: "$PG_RO_PASSWORD" }
+    - name: "PG Cards"
+      uid: pg-card
+      type: grafana-postgresql-datasource
+      url: postgres.middleware.svc.cluster.local:5432
+      user: grafana_ro
+      jsonData: { database: card, sslmode: disable, postgresVersion: 1600 }
+      secureJsonData: { password: "$PG_RO_PASSWORD" }
+    - name: "PG Accounts & deposits"
+      uid: pg-account
+      type: grafana-postgresql-datasource
+      url: postgres.middleware.svc.cluster.local:5432
+      user: grafana_ro
+      jsonData: { database: account, sslmode: disable, postgresVersion: 1600 }
+      secureJsonData: { password: "$PG_RO_PASSWORD" }
+    - name: "PG Auth"
+      uid: pg-auth
+      type: grafana-postgresql-datasource
+      url: postgres.middleware.svc.cluster.local:5432
+      user: grafana_ro
+      jsonData: { database: auth, sslmode: disable, postgresVersion: 1600 }
+      secureJsonData: { password: "$PG_RO_PASSWORD" }
+    - name: "PG Ledger"
+      uid: pg-ledger
+      type: grafana-postgresql-datasource
+      url: postgres.middleware.svc.cluster.local:5432
+      user: grafana_ro
+      jsonData: { database: ledger, sslmode: disable, postgresVersion: 1600 }
+      secureJsonData: { password: "$PG_RO_PASSWORD" }
+
+prometheusOperator:
+  resources:
+    requests: { cpu: 10m, memory: 48Mi }
+    limits: { memory: 192Mi }
+kube-state-metrics:
+  resources:
+    requests: { cpu: 10m, memory: 32Mi }
+    limits: { memory: 128Mi }
+prometheus-node-exporter:
+  resources:
+    requests: { cpu: 10m, memory: 16Mi }
+    limits: { memory: 64Mi }

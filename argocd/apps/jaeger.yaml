@@ -1,0 +1,28 @@
+# Trace storage + UI (http://jaeger.localhost). Before the collector, which sends to it.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: jaeger
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  project: default
+  sources:
+    - repoURL: https://jaegertracing.github.io/helm-charts
+      chart: jaeger
+      targetRevision: 4.13.1
+      helm:
+        releaseName: jaeger
+        valueFiles:
+          - $values/platform/observability/jaeger-values.yaml
+    - repoURL: https://github.com/vijaykumarbirru/vijaybank-kubernetes.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions:
+      - CreateNamespace=true

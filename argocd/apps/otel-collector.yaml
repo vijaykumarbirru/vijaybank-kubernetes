@@ -1,0 +1,28 @@
+# Receives traces and metrics from every service (OTLP) and fans them out.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: otel-collector
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  project: default
+  sources:
+    - repoURL: https://open-telemetry.github.io/opentelemetry-helm-charts
+      chart: opentelemetry-collector
+      targetRevision: 0.178.2
+      helm:
+        releaseName: otel-collector
+        valueFiles:
+          - $values/platform/observability/otel-collector-values.yaml
+    - repoURL: https://github.com/vijaykumarbirru/vijaybank-kubernetes.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions:
+      - CreateNamespace=true

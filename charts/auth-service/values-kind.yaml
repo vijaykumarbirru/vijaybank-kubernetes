@@ -9,3 +9,5 @@ generic-application:
       memory: 256Mi
     limits:
       memory: 768Mi
+  otel:
+    enabled: true
