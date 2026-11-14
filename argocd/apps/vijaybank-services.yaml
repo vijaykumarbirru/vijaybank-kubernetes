@@ -1,5 +1,5 @@
 # One Argo CD Application per service chart: every folder in charts/ except the shared
-# chart, the data stores and the seed Job. A new charts/<name>/ folder becomes a new app.
+# chart, the data stores, the monitoring config and the seed Job. A new charts/<name>/ folder becomes a new app.
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -19,6 +19,8 @@ spec:
           - path: charts/generic-application
             exclude: true
           - path: charts/middleware
+            exclude: true
+          - path: charts/observability-config
             exclude: true
           - path: charts/seed
             exclude: true
