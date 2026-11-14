@@ -1,0 +1,10 @@
+apiVersion: v2
+name: audit-service
+description: Audit trail of every business event (Python, MongoDB)
+type: application
+version: "0.1.0"
+appVersion: "0.1.0"
+dependencies:
+- name: generic-application
+  version: "1.0.0"
+  repository: file://../generic-application

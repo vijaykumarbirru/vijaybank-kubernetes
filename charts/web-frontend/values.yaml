@@ -1,0 +1,7 @@
+# Net-banking web UI (React, served by nginx; /api proxied to api-gateway)
+# Environment-specific settings (image tag, resources, routes) are in values-kind.yaml.
+generic-application:
+  containerPort: 8080
+  health:
+    path: /
+    livenessPath: /

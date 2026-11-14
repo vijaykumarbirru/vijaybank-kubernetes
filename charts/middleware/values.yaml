@@ -1,0 +1,43 @@
+# Passwords come from Secrets made by scripts/create-secrets.sh (never from Git).
+
+postgres:
+  enabled: true
+  image: postgres:16-alpine
+  secret: postgres-credentials      # keys: postgres-password + one per entry in databases
+  # One database + one login per service: <name> database owned by <name>_svc.
+  databases: [auth, customer, account, ledger, transfer, payment, card]
+  # Read-only login for Grafana business dashboards (pg_read_all_data).
+  readOnlyUser: { name: grafana_ro, secretKey: grafana-ro }
+  storage: 2Gi
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 512Mi }
+
+redis:
+  enabled: true
+  image: redis:7-alpine
+  resources:
+    requests: { cpu: 25m, memory: 32Mi }
+    limits: { memory: 128Mi }
+
+rabbitmq:
+  enabled: true
+  image: rabbitmq:3.13-management-alpine
+  secret: rabbitmq-credentials      # keys: username, password
+  resources:
+    requests: { cpu: 50m, memory: 192Mi }
+    limits: { memory: 512Mi }
+  # Management UI through the shared Traefik Gateway.
+  route:
+    enabled: true
+    hostnames: [rabbitmq.localhost]
+    gateway: { name: main, namespace: traefik }
+
+mongodb:
+  enabled: true
+  image: mongo:7
+  storage: 2Gi
+  wiredTigerCacheSizeGB: 0.25
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 512Mi }

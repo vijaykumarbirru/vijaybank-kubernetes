@@ -1,0 +1,28 @@
+# Traefik from its official chart; our settings come from platform/traefik/values.yaml in Git.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: traefik
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-2"
+spec:
+  project: default
+  sources:
+    - repoURL: https://traefik.github.io/charts
+      chart: traefik
+      targetRevision: 41.6.0
+      helm:
+        releaseName: traefik
+        valueFiles:
+          - $values/platform/traefik/values.yaml
+    - repoURL: https://github.com/vijaykumarbirru/vijaybank-kubernetes.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: traefik
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions:
+      - CreateNamespace=true

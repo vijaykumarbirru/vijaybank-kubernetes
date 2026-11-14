@@ -1,0 +1,99 @@
+# Defaults for every service. A service chart overrides these under the
+# `generic-application:` key in its own values.yaml / values-<env>.yaml.
+
+# Resource names default to the Helm release name (e.g. auth-service).
+nameOverride: ""
+
+image:
+  repository: ""            # e.g. localhost:5001/vijaybank/auth-service
+  tag: ""
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+# Port the container listens on; also used by the probes and the Service.
+containerPort: 8080
+
+service:
+  enabled: true
+  type: ClusterIP
+  port: ""                  # defaults to containerPort
+
+# Where the data stores live; service values reference these with tpl,
+# e.g. "{{ .Values.middleware.postgres }}".
+middleware:
+  postgres: postgres.middleware.svc.cluster.local
+  redis: redis.middleware.svc.cluster.local
+  rabbitmq: rabbitmq.middleware.svc.cluster.local
+  mongodb: mongodb.middleware.svc.cluster.local
+
+# Plain settings -> ConfigMap -> env vars. Values are rendered with tpl, so
+# they can use {{ .Release.Namespace }} etc.
+env: {}
+
+# Env vars read from existing Secrets:
+#   DATABASE_URL: { secret: auth-service-db, key: url }
+secretEnv: {}
+
+# Raw env entries added after secretEnv, so values can reference those with
+# $(NAME), e.g. a connection string that embeds a password:
+#   - name: DATABASE_URL
+#     value: postgres://ledger_svc:$(DB_PASSWORD)@postgres:5432/ledger
+extraEnv: []
+
+# Whole Secrets / ConfigMaps loaded as env vars (Kubernetes envFrom entries).
+envFrom: []
+
+# HTTP health checks. readiness = "send me traffic", liveness = "restart me",
+# startup = "still booting" (holds the other two off while a JVM warms up).
+health:
+  enabled: true
+  path: /health/ready
+  livenessPath: /health/live  # "process alive"; doesn't fail when a dependency is down
+  readiness: { periodSeconds: 10, timeoutSeconds: 5, failureThreshold: 3 }
+  liveness: { periodSeconds: 20, timeoutSeconds: 5, failureThreshold: 3 }
+  startup: { periodSeconds: 5, timeoutSeconds: 5, failureThreshold: 36 }   # up to 3 min
+
+# OpenTelemetry. Off until the collector exists (Phase 4); when off, every
+# SDK/agent is told not to export so nothing logs connection errors.
+otel:
+  enabled: false
+  endpoint: http://otel-collector.observability.svc.cluster.local:4318
+  protocol: http/protobuf
+  serviceName: ""           # defaults to the resource name
+  resourceAttributes: deployment.environment=kind,service.namespace=vijaybank
+  env: {}                   # language-specific extras, e.g. JAVA_TOOL_OPTIONS
+
+resources:
+  requests: { cpu: 25m, memory: 64Mi }
+  limits: { memory: 256Mi }
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext: {}
+securityContext:
+  allowPrivilegeEscalation: false
+
+volumes: []
+volumeMounts: []
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Gateway API route through the shared Traefik Gateway.
+route:
+  enabled: false
+  hostnames: []             # e.g. [bank.localhost]
+  path: /
+  gateway:
+    name: main
+    namespace: traefik
+
+# Run as a one-off Job instead of a Deployment (no Service, no probes).
+job:
+  enabled: false
+  backoffLimit: 6
+  ttlSecondsAfterFinished: ""
+  annotations: {}           # e.g. Argo CD / Helm hook annotations

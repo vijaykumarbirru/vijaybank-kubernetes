@@ -1,0 +1,10 @@
+apiVersion: v2
+name: notification-service
+description: SMS / email notifications and the dev inbox (Node.js)
+type: application
+version: "0.1.0"
+appVersion: "0.1.0"
+dependencies:
+- name: generic-application
+  version: "1.0.0"
+  repository: file://../generic-application

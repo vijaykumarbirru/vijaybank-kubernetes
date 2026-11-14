@@ -1,0 +1,11 @@
+# Double-entry ledger (Go)
+# Environment-specific settings (image tag, resources, routes) are in values-kind.yaml.
+generic-application:
+  containerPort: 8084
+  secretEnv:
+    DB_PASSWORD:
+      secret: db-credentials
+      key: ledger
+  extraEnv:
+  - name: DATABASE_URL
+    value: "postgres://ledger_svc:$(DB_PASSWORD)@{{ .Values.middleware.postgres }}:5432/ledger"

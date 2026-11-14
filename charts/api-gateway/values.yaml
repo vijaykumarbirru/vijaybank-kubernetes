@@ -1,0 +1,7 @@
+# API gateway (Go): JWT check, rate limits, routes /api/* to the services
+# Environment-specific settings (image tag, resources, routes) are in values-kind.yaml.
+generic-application:
+  containerPort: 8000
+  env:
+    REDIS_ADDR: "{{ .Values.middleware.redis }}:6379"
+    DEV_INBOX_ENABLED: "true"

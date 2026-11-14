@@ -1,0 +1,11 @@
+# Local kind cluster.
+generic-application:
+  image:
+    repository: localhost:5001/vijaybank/card-service
+    tag: "0.1.0"
+  resources:
+    requests:
+      cpu: 50m
+      memory: 256Mi
+    limits:
+      memory: 768Mi

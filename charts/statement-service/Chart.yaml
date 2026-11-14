@@ -1,0 +1,10 @@
+apiVersion: v2
+name: statement-service
+description: Account statements and PDF export (Go)
+type: application
+version: "0.1.0"
+appVersion: "0.1.0"
+dependencies:
+- name: generic-application
+  version: "1.0.0"
+  repository: file://../generic-application

@@ -1,0 +1,10 @@
+apiVersion: v2
+name: card-service
+description: 'Debit / credit cards: block, unblock, limits (Kotlin / Ktor)'
+type: application
+version: "0.1.0"
+appVersion: "0.1.0"
+dependencies:
+- name: generic-application
+  version: "1.0.0"
+  repository: file://../generic-application

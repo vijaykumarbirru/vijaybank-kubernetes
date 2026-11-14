@@ -1,0 +1,55 @@
+{{- if .Values.mongodb.enabled }}
+{{- $ctx := dict "name" "mongodb" "root" . }}
+{{- $mg := .Values.mongodb }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  labels: {{- include "mw.labels" $ctx | nindent 4 }}
+spec:
+  selector: {{- include "mw.selector" $ctx | nindent 4 }}
+  ports:
+    - { name: mongodb, port: 27017, targetPort: mongodb }
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb
+  labels: {{- include "mw.labels" $ctx | nindent 4 }}
+spec:
+  serviceName: mongodb
+  replicas: 1
+  selector:
+    matchLabels: {{- include "mw.selector" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "mw.selector" $ctx | nindent 8 }}
+    spec:
+      containers:
+        - name: mongodb
+          image: {{ $mg.image }}
+          # Cap the WiredTiger cache to fit the memory limit.
+          args: ["--wiredTigerCacheSizeGB", "{{ $mg.wiredTigerCacheSizeGB }}"]
+          ports:
+            - { name: mongodb, containerPort: 27017 }
+          readinessProbe:
+            exec: { command: ["mongosh", "--quiet", "--eval", "db.adminCommand('ping')"] }
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            timeoutSeconds: 10
+          livenessProbe:
+            tcpSocket: { port: mongodb }
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources: {{- toYaml $mg.resources | nindent 12 }}
+          volumeMounts:
+            - { name: data, mountPath: /data/db }
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: {{ $mg.storage }}
+{{- end }}

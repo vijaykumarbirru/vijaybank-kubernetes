@@ -1,0 +1,4 @@
+# Account statements and PDF export (Go)
+# Environment-specific settings (image tag, resources, routes) are in values-kind.yaml.
+generic-application:
+  containerPort: 8089

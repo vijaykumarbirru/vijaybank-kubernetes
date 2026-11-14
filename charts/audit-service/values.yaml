@@ -1,0 +1,20 @@
+# Audit trail of every business event (Python, MongoDB)
+# Environment-specific settings (image tag, resources, routes) are in values-kind.yaml.
+generic-application:
+  containerPort: 8088
+  env:
+    MONGO_URL: "mongodb://{{ .Values.middleware.mongodb }}:27017"
+  secretEnv:
+    RABBITMQ_USER:
+      secret: rabbitmq-credentials
+      key: username
+    RABBITMQ_PASSWORD:
+      secret: rabbitmq-credentials
+      key: password
+  extraEnv:
+  - name: RABBITMQ_URL
+    value: "amqp://$(RABBITMQ_USER):$(RABBITMQ_PASSWORD)@{{ .Values.middleware.rabbitmq }}:5672/%2F"
+  otel:
+    env:
+      OTEL_PYTHON_EXCLUDED_URLS: health
+      OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED: "true"

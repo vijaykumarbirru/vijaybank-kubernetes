@@ -1,0 +1,10 @@
+apiVersion: v2
+name: customer-service
+description: Customer profiles and KYC (Python / FastAPI)
+type: application
+version: "0.1.0"
+appVersion: "0.1.0"
+dependencies:
+- name: generic-application
+  version: "1.0.0"
+  repository: file://../generic-application

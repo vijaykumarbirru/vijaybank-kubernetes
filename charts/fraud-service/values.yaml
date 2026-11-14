@@ -1,0 +1,22 @@
+# Rule-based fraud scoring (Python / FastAPI)
+# Environment-specific settings (image tag, resources, routes) are in values-kind.yaml.
+generic-application:
+  containerPort: 8086
+  env:
+    FRAUD_BLOCK_SCORE: "80"
+    FRAUD_FLAG_SCORE: "50"
+  secretEnv:
+    RABBITMQ_USER:
+      secret: rabbitmq-credentials
+      key: username
+    RABBITMQ_PASSWORD:
+      secret: rabbitmq-credentials
+      key: password
+  extraEnv:
+  - name: RABBITMQ_URL
+    value: "amqp://$(RABBITMQ_USER):$(RABBITMQ_PASSWORD)@{{ .Values.middleware.rabbitmq }}:5672/%2F"
+  otel:
+    env:
+      OTEL_PYTHON_EXCLUDED_URLS: health
+      OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED: "true"
+      OTEL_PYTHON_DISABLED_INSTRUMENTATIONS: fastapi

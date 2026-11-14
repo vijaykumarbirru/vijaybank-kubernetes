@@ -1,0 +1,52 @@
+# Argo CD - deploys everything in this repo from Git and shows every app / pod in its UI.
+#   helm upgrade --install argocd argo/argo-cd --version 10.17.2 \
+#     -n argocd --create-namespace -f platform/argocd/values.yaml
+# UI: http://argocd.localhost   user: admin
+#   password: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
+
+global:
+  domain: argocd.localhost
+
+configs:
+  params:
+    server.insecure: true          # plain HTTP behind Traefik (local lab, no TLS)
+  cm:
+    timeout.reconciliation: 60s    # check Git every minute (default 3 min)
+
+# Not needed locally: SSO (Dex) and Slack/email notifications.
+dex:
+  enabled: false
+notifications:
+  enabled: false
+
+server:
+  httproute:
+    enabled: true
+    parentRefs:
+      - name: main
+        namespace: traefik
+    hostnames:
+      - argocd.localhost
+  resources:
+    requests: { cpu: 25m, memory: 64Mi }
+    limits: { memory: 256Mi }
+
+controller:
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { memory: 768Mi }
+
+repoServer:
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 512Mi }
+
+applicationSet:
+  resources:
+    requests: { cpu: 10m, memory: 32Mi }
+    limits: { memory: 128Mi }
+
+redis:
+  resources:
+    requests: { cpu: 10m, memory: 32Mi }
+    limits: { memory: 128Mi }

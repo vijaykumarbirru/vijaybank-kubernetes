@@ -1,0 +1,16 @@
+# Customer profiles and KYC (Python / FastAPI)
+# Environment-specific settings (image tag, resources, routes) are in values-kind.yaml.
+generic-application:
+  containerPort: 8082
+  secretEnv:
+    DB_PASSWORD:
+      secret: db-credentials
+      key: customer
+  extraEnv:
+  - name: DATABASE_URL
+    value: "postgresql://customer_svc:$(DB_PASSWORD)@{{ .Values.middleware.postgres }}:5432/customer"
+  otel:
+    env:
+      OTEL_PYTHON_EXCLUDED_URLS: health
+      OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED: "true"
+      OTEL_PYTHON_DISABLED_INSTRUMENTATIONS: fastapi

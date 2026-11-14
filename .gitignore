@@ -1,0 +1,12 @@
+.env
+node_modules/
+dist/
+target/
+bin/
+obj/
+__pycache__/
+*.pyc
+.DS_Store
+.idea/
+.vscode/
+charts/**/charts/*.tgz

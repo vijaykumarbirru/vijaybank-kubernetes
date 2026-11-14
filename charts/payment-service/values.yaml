@@ -1,0 +1,23 @@
+# Bill payments with OTP (Node.js)
+# Environment-specific settings (image tag, resources, routes) are in values-kind.yaml.
+generic-application:
+  containerPort: 8090
+  secretEnv:
+    DB_PASSWORD:
+      secret: db-credentials
+      key: payment
+    RABBITMQ_USER:
+      secret: rabbitmq-credentials
+      key: username
+    RABBITMQ_PASSWORD:
+      secret: rabbitmq-credentials
+      key: password
+  extraEnv:
+  - name: DATABASE_URL
+    value: "postgres://payment_svc:$(DB_PASSWORD)@{{ .Values.middleware.postgres }}:5432/payment"
+  - name: RABBITMQ_URL
+    value: "amqp://$(RABBITMQ_USER):$(RABBITMQ_PASSWORD)@{{ .Values.middleware.rabbitmq }}:5672"
+  otel:
+    env:
+      OTEL_NODE_DISABLED_INSTRUMENTATIONS: fs,dns,net
+      NODE_OPTIONS: --require @opentelemetry/auto-instrumentations-node/register --experimental-loader=@opentelemetry/instrumentation/hook.mjs

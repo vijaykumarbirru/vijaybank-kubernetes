@@ -1,0 +1,14 @@
+# Settles transfers from RabbitMQ (.NET worker)
+# Environment-specific settings (image tag, resources, routes) are in values-kind.yaml.
+generic-application:
+  containerPort: 8092
+  env:
+    SETTLEMENT_FAILURE_RATE: "0"
+    RABBITMQ_HOST: "{{ .Values.middleware.rabbitmq }}"
+  secretEnv:
+    RABBITMQ_USER:
+      secret: rabbitmq-credentials
+      key: username
+    RABBITMQ_PASSWORD:
+      secret: rabbitmq-credentials
+      key: password

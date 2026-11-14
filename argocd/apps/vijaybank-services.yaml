@@ -1,0 +1,46 @@
+# One Argo CD Application per service chart: every folder in charts/ except the shared
+# chart, the data stores and the seed Job. A new charts/<name>/ folder becomes a new app.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: vijaybank-services
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/vijaykumarbirru/vijaybank-kubernetes.git
+        revision: main
+        directories:
+          - path: charts/*
+          - path: charts/generic-application
+            exclude: true
+          - path: charts/middleware
+            exclude: true
+          - path: charts/seed
+            exclude: true
+  template:
+    metadata:
+      name: '{{.path.basename}}'
+      labels:
+        app.kubernetes.io/part-of: vijaybank
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/vijaykumarbirru/vijaybank-kubernetes.git
+        targetRevision: main
+        path: '{{.path.path}}'
+        helm:
+          releaseName: '{{.path.basename}}'
+          valueFiles:
+            - values-kind.yaml
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: vijaybank
+      syncPolicy:
+        automated: { prune: true, selfHeal: true }
+        syncOptions:
+          - CreateNamespace=true

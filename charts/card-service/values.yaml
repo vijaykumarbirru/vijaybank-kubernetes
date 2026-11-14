@@ -1,0 +1,21 @@
+# Debit / credit cards: block, unblock, limits (Kotlin / Ktor)
+# Environment-specific settings (image tag, resources, routes) are in values-kind.yaml.
+generic-application:
+  containerPort: 8091
+  env:
+    DATABASE_URL: "jdbc:postgresql://{{ .Values.middleware.postgres }}:5432/card"
+    DATABASE_USER: card_svc
+    RABBITMQ_HOST: "{{ .Values.middleware.rabbitmq }}"
+  secretEnv:
+    DATABASE_PASSWORD:
+      secret: db-credentials
+      key: card
+    RABBITMQ_USER:
+      secret: rabbitmq-credentials
+      key: username
+    RABBITMQ_PASSWORD:
+      secret: rabbitmq-credentials
+      key: password
+  otel:
+    env:
+      JAVA_TOOL_OPTIONS: -javaagent:/otel/opentelemetry-javaagent.jar

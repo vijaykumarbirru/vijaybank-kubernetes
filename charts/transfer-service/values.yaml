@@ -1,0 +1,20 @@
+# Fund transfers and beneficiaries (.NET)
+# Environment-specific settings (image tag, resources, routes) are in values-kind.yaml.
+generic-application:
+  containerPort: 8085
+  env:
+    BENEFICIARY_COOLING_MINUTES: "30"
+    RABBITMQ_HOST: "{{ .Values.middleware.rabbitmq }}"
+  secretEnv:
+    DB_PASSWORD:
+      secret: db-credentials
+      key: transfer
+    RABBITMQ_USER:
+      secret: rabbitmq-credentials
+      key: username
+    RABBITMQ_PASSWORD:
+      secret: rabbitmq-credentials
+      key: password
+  extraEnv:
+  - name: DATABASE_URL
+    value: "Host={{ .Values.middleware.postgres }};Database=transfer;Username=transfer_svc;Password=$(DB_PASSWORD)"

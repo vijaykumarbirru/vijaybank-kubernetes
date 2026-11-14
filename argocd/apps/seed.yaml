@@ -1,0 +1,23 @@
+# Demo data Job. Runs after the services; a finished Job is left alone on later syncs.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: seed
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/vijaykumarbirru/vijaybank-kubernetes.git
+    targetRevision: main
+    path: charts/seed
+    helm:
+      releaseName: seed
+      valueFiles:
+        - values-kind.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: vijaybank
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }

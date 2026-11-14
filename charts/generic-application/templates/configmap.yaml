@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "app.name" . }}
+  labels:
+    {{- include "app.labels" . | nindent 4 }}
+data:
+  {{- range $k, $v := .Values.env }}
+  {{ $k }}: {{ tpl (toString $v) $ | quote }}
+  {{- end }}
+  {{- if .Values.otel.enabled }}
+  OTEL_SERVICE_NAME: {{ default (include "app.name" .) .Values.otel.serviceName | quote }}
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.otel.endpoint | quote }}
+  OTEL_EXPORTER_OTLP_PROTOCOL: {{ .Values.otel.protocol | quote }}
+  OTEL_RESOURCE_ATTRIBUTES: {{ printf "%s,k8s.namespace.name=%s" .Values.otel.resourceAttributes .Release.Namespace | quote }}
+  OTEL_LOGS_EXPORTER: "none"
+  {{- range $k, $v := .Values.otel.env }}
+  {{ $k }}: {{ tpl (toString $v) $ | quote }}
+  {{- end }}
+  {{- else }}
+  OTEL_TRACES_EXPORTER: "none"
+  OTEL_METRICS_EXPORTER: "none"
+  OTEL_LOGS_EXPORTER: "none"
+  {{- end }}

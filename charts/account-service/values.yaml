@@ -1,0 +1,21 @@
+# Accounts, balances and fixed deposits (Java / Spring Boot)
+# Environment-specific settings (image tag, resources, routes) are in values-kind.yaml.
+generic-application:
+  containerPort: 8083
+  env:
+    DATABASE_URL: "jdbc:postgresql://{{ .Values.middleware.postgres }}:5432/account"
+    DATABASE_USER: account_svc
+    RABBITMQ_HOST: "{{ .Values.middleware.rabbitmq }}"
+  secretEnv:
+    DATABASE_PASSWORD:
+      secret: db-credentials
+      key: account
+    RABBITMQ_USER:
+      secret: rabbitmq-credentials
+      key: username
+    RABBITMQ_PASSWORD:
+      secret: rabbitmq-credentials
+      key: password
+  otel:
+    env:
+      JAVA_TOOL_OPTIONS: -javaagent:/otel/opentelemetry-javaagent.jar

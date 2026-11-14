@@ -1,0 +1,104 @@
+{{- if .Values.rabbitmq.enabled }}
+{{- $ctx := dict "name" "rabbitmq" "root" . }}
+{{- $mq := .Values.rabbitmq }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rabbitmq-config
+  labels: {{- include "mw.labels" $ctx | nindent 4 }}
+data:
+  rabbitmq.conf: |
+    {{- .Files.Get "files/rabbitmq.conf" | nindent 4 }}
+  definitions.json.tpl: |
+    {{- .Files.Get "files/definitions.json" | nindent 4 }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  labels: {{- include "mw.labels" $ctx | nindent 4 }}
+spec:
+  selector: {{- include "mw.selector" $ctx | nindent 4 }}
+  ports:
+    - { name: amqp, port: 5672, targetPort: amqp }
+    - { name: management, port: 15672, targetPort: management }
+    - { name: prometheus, port: 15692, targetPort: prometheus }
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: rabbitmq
+  labels: {{- include "mw.labels" $ctx | nindent 4 }}
+spec:
+  serviceName: rabbitmq
+  replicas: 1
+  selector:
+    matchLabels: {{- include "mw.selector" $ctx | nindent 6 }}
+  template:
+    metadata:
+      labels: {{- include "mw.selector" $ctx | nindent 8 }}
+      annotations:
+        checksum/config: {{ printf "%s%s" (.Files.Get "files/rabbitmq.conf") (.Files.Get "files/definitions.json") | sha256sum }}
+    spec:
+      # Fills the user/password into the definitions file (topology from Git, password from the Secret).
+      initContainers:
+        - name: render-definitions
+          image: {{ $mq.image }}
+          command: ["sh", "-c"]
+          # Starts from the image's own /etc/rabbitmq (enabled_plugins, conf.d) so nothing is lost.
+          args:
+            - cp -a /etc/rabbitmq/. /work/ &&
+              cp /config/rabbitmq.conf /work/rabbitmq.conf &&
+              sed -e "s/__RABBITMQ_USER__/$RABBITMQ_USER/g" -e "s/__RABBITMQ_PASSWORD__/$RABBITMQ_PASSWORD/g"
+              /config/definitions.json.tpl > /work/definitions.json
+          env:
+            - name: RABBITMQ_USER
+              valueFrom: { secretKeyRef: { name: {{ $mq.secret }}, key: username } }
+            - name: RABBITMQ_PASSWORD
+              valueFrom: { secretKeyRef: { name: {{ $mq.secret }}, key: password } }
+          volumeMounts:
+            - { name: config, mountPath: /config }
+            - { name: etc, mountPath: /work }
+      containers:
+        - name: rabbitmq
+          image: {{ $mq.image }}
+          ports:
+            - { name: amqp, containerPort: 5672 }
+            - { name: management, containerPort: 15672 }
+            - { name: prometheus, containerPort: 15692 }
+          readinessProbe:
+            exec: { command: ["rabbitmq-diagnostics", "-q", "check_port_connectivity"] }
+            initialDelaySeconds: 15
+            periodSeconds: 15
+            timeoutSeconds: 10
+          livenessProbe:
+            exec: { command: ["rabbitmq-diagnostics", "-q", "ping"] }
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 15
+          resources: {{- toYaml $mq.resources | nindent 12 }}
+          volumeMounts:
+            - { name: etc, mountPath: /etc/rabbitmq }
+      volumes:
+        - name: config
+          configMap: { name: rabbitmq-config }
+        - name: etc
+          emptyDir: {}
+{{- if $mq.route.enabled }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: rabbitmq
+  labels: {{- include "mw.labels" $ctx | nindent 4 }}
+spec:
+  parentRefs:
+    - name: {{ $mq.route.gateway.name }}
+      namespace: {{ $mq.route.gateway.namespace }}
+  hostnames: {{- toYaml $mq.route.hostnames | nindent 4 }}
+  rules:
+    - backendRefs:
+        - name: rabbitmq
+          port: 15672
+{{- end }}
+{{- end }}

@@ -1,0 +1,10 @@
+apiVersion: v2
+name: auth-service
+description: Login, OTP and JWT issuing (Java / Spring Boot)
+type: application
+version: "0.1.0"
+appVersion: "0.1.0"
+dependencies:
+- name: generic-application
+  version: "1.0.0"
+  repository: file://../generic-application

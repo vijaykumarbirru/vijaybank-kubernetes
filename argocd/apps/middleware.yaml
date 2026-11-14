@@ -1,0 +1,21 @@
+# PostgreSQL, Redis, RabbitMQ, MongoDB. Their Secrets come from scripts/create-secrets.sh, not Git.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: middleware
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/vijaykumarbirru/vijaybank-kubernetes.git
+    targetRevision: main
+    path: charts/middleware
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: middleware
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions:
+      - CreateNamespace=true

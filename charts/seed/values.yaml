@@ -1,0 +1,8 @@
+# One-off Job: demo customers, accounts and history (log in as VB100001..VB100020)
+# Environment-specific settings (image tag, resources, routes) are in values-kind.yaml.
+generic-application:
+  job:
+    enabled: true
+    backoffLimit: 10
+  service:
+    enabled: false

@@ -1,0 +1,23 @@
+# Login, OTP and JWT issuing (Java / Spring Boot)
+# Environment-specific settings (image tag, resources, routes) are in values-kind.yaml.
+generic-application:
+  containerPort: 8081
+  env:
+    DATABASE_URL: "jdbc:postgresql://{{ .Values.middleware.postgres }}:5432/auth"
+    DATABASE_USER: auth_svc
+    RABBITMQ_HOST: "{{ .Values.middleware.rabbitmq }}"
+    REDIS_HOST: "{{ .Values.middleware.redis }}"
+  secretEnv:
+    DATABASE_PASSWORD:
+      secret: db-credentials
+      key: auth
+    RABBITMQ_USER:
+      secret: rabbitmq-credentials
+      key: username
+    RABBITMQ_PASSWORD:
+      secret: rabbitmq-credentials
+      key: password
+  otel:
+    env:
+      JAVA_TOOL_OPTIONS: -javaagent:/otel/opentelemetry-javaagent.jar
+      OTEL_METRIC_EXPORT_INTERVAL: "15000"

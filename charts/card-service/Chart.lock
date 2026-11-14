@@ -1,0 +1,6 @@
+dependencies:
+- name: generic-application
+  repository: file://../generic-application
+  version: 1.0.0
+digest: sha256:b1681bd7049d0ca7ea61661b13c6dec3f4148eeed43f938436c0dbd946ac4881
+generated: "2026-11-14T19:40:31.935545+04:00"
