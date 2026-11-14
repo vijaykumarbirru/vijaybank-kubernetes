@@ -1,0 +1,24 @@
+# RabbitMQ overview metrics + per-queue depth and consumers (detailed endpoint).
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: rabbitmq
+  labels:
+    app.kubernetes.io/part-of: vijaybank
+spec:
+  namespaceSelector:
+    matchNames: [{{ .Values.rabbitmq.namespace }}]
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Values.rabbitmq.service }}
+  endpoints:
+    - port: prometheus
+      interval: 15s
+    - port: prometheus
+      interval: 30s
+      path: /metrics/detailed
+      params:
+        family: [queue_coarse_metrics, queue_consumer_count]
+      relabelings:
+        - targetLabel: job
+          replacement: rabbitmq-queues

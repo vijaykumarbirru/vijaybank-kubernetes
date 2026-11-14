@@ -64,6 +64,9 @@ grafana:
       searchNamespace: ALL                  # ConfigMaps labelled grafana_dashboard=1
       folderAnnotation: grafana_folder
       provider: { foldersFromFilesStructure: true }
+    alerts:
+      enabled: true
+      searchNamespace: ALL                  # ConfigMaps labelled grafana_alert=1
     datasources:
       exemplarTraceIdDestinations:          # exemplar dots on graphs open the trace in Jaeger
         datasourceUid: jaeger

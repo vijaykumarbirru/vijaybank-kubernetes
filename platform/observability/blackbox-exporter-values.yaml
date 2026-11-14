@@ -1,0 +1,4 @@
+# Calls each service's /health/ready for Prometheus (probe_success = 1 UP, 0 DOWN).
+# The targets are a Probe object in charts/observability-config.
+fullnameOverride: blackbox-exporter
+resources: { requests: { cpu: 10m, memory: 16Mi }, limits: { memory: 64Mi } }

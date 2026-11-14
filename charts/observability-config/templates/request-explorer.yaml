@@ -1,0 +1,82 @@
+{{- if .Values.requestExplorer.enabled }}
+{{- $files := .Files.Glob "request-explorer/*" }}
+# Static page (files in request-explorer/) served by nginx, which also proxies the two read-only
+# Jaeger APIs the page needs. http://{{ .Values.requestExplorer.hostname }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: request-explorer
+  labels:
+    app.kubernetes.io/name: request-explorer
+    app.kubernetes.io/part-of: vijaybank
+data:
+{{- range $path, $_ := $files }}
+  {{ base $path }}: |-
+{{ $.Files.Get $path | indent 4 }}
+{{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: request-explorer
+  labels:
+    app.kubernetes.io/name: request-explorer
+    app.kubernetes.io/part-of: vijaybank
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: request-explorer
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: request-explorer
+      annotations:
+        checksum/files: {{ $files.AsConfig | sha256sum }}
+    spec:
+      containers:
+        - name: nginx
+          image: {{ .Values.requestExplorer.image }}
+          ports:
+            - { name: http, containerPort: 8080 }
+          readinessProbe:
+            httpGet: { path: /, port: http }
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 5m, memory: 8Mi }
+            limits: { memory: 32Mi }
+          volumeMounts:
+            - { name: files, mountPath: /usr/share/nginx/html/index.html, subPath: index.html }
+            - { name: files, mountPath: /usr/share/nginx/html/app.js, subPath: app.js }
+            - { name: files, mountPath: /usr/share/nginx/html/style.css, subPath: style.css }
+            - { name: files, mountPath: /etc/nginx/conf.d/default.conf, subPath: nginx.conf }
+      volumes:
+        - name: files
+          configMap: { name: request-explorer }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: request-explorer
+  labels:
+    app.kubernetes.io/name: request-explorer
+spec:
+  selector:
+    app.kubernetes.io/name: request-explorer
+  ports:
+    - { name: http, port: 8080, targetPort: http }
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: request-explorer
+spec:
+  parentRefs:
+    - name: {{ .Values.requestExplorer.gateway.name }}
+      namespace: {{ .Values.requestExplorer.gateway.namespace }}
+  hostnames: [{{ .Values.requestExplorer.hostname }}]
+  rules:
+    - backendRefs:
+        - name: request-explorer
+          port: 8080
+{{- end }}

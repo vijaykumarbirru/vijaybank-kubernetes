@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Request Explorer</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="logo">VB</span>
+      <div>
+        <h1>Request Explorer</h1>
+        <p>Follow a real VijayBank request through every pod — live from Jaeger</p>
+      </div>
+    </div>
+    <div class="live">
+      <span id="live-dot" class="dot"></span>
+      <span id="live-text">Connecting to Jaeger…</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- Left: recent requests -->
+    <aside class="panel" id="left">
+      <div class="panel-head">
+        <h2>Recent requests</h2>
+        <div class="filters" role="tablist">
+          <button data-filter="payments" class="active">Payments</button>
+          <button data-filter="all">All</button>
+        </div>
+      </div>
+      <label class="follow"><input type="checkbox" id="follow" checked> Auto-play my next payment</label>
+      <form id="trace-form" class="trace-form"><input id="trace-id" placeholder="Paste a trace ID" autocomplete="off" spellcheck="false"><button>Open</button></form>
+      <ol id="traces" class="traces"><li class="empty">Waiting for requests…</li></ol>
+      <p class="hint">Keys: <kbd>Space</kbd> play/pause · <kbd>←</kbd> <kbd>→</kbd> step · <kbd>R</kbd> reset.</p>
+      <p class="hint">Make a transfer or pay a bill at <a href="http://bank.localhost" target="_blank" rel="noopener">bank.localhost</a> — it appears here within a few seconds.</p>
+    </aside>
+
+    <!-- Centre: network diagram -->
+    <section class="panel" id="centre">
+      <div class="panel-head">
+        <h2 id="trace-title">No request selected</h2>
+        <div class="modes" role="tablist" title="How the request reaches the cluster">
+          <button data-mode="k8s" class="active">Kubernetes (real)</button><button data-mode="prod">Production (illustrative)</button>
+        </div>
+        <div class="legend">
+          <span><i class="p-dns"></i>DNS</span><span><i class="p-tls"></i>HTTPS</span><span><i class="p-http"></i>HTTP</span><span><i class="p-sql"></i>SQL</span><span><i class="p-redis"></i>Redis</span>
+          <span><i class="p-amqp"></i>RabbitMQ</span><span><i class="p-mongo"></i>MongoDB</span>
+        </div>
+      </div>
+      <div id="summary" class="summary"></div>
+      <div class="diagram-wrap"><svg id="diagram" viewBox="0 0 1132 660" role="img" aria-label="Request path through the VijayBank pods"></svg></div>
+    </section>
+
+    <!-- Right: details -->
+    <aside class="panel" id="right">
+      <div class="panel-head"><h2>Step details</h2></div>
+      <div id="details"><p class="muted">Pick a request, then press Play or click a row in the table.</p></div>
+    </aside>
+
+    <!-- Bottom: hop table -->
+    <section class="panel" id="bottom">
+      <div class="panel-head">
+        <h2>Hops <span id="hop-count" class="muted"></span></h2>
+        <div class="controls">
+          <label>Pace
+            <select id="pace">
+              <option value="even" selected>Even (0.8 s per hop)</option>
+              <option value="real10">Real timing ×10 slower</option>
+              <option value="real">Real timing</option>
+            </select>
+          </label>
+          <label class="chk"><input type="checkbox" id="show-db" checked> DB / cache calls</label>
+          <button id="btn-reset" title="Reset">⟲ Reset</button>
+          <button id="btn-back" title="Previous hop (←)">◂ Back</button>
+          <button id="btn-step" title="Next hop (→)">Step ▸</button>
+          <button id="btn-play" class="primary" title="Space">▶ Play</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Time</th><th>From</th><th>To</th><th>Protocol</th><th>Info</th><th>Result</th><th>Took</th></tr></thead>
+          <tbody id="hops"><tr><td colspan="8" class="muted">No request selected.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

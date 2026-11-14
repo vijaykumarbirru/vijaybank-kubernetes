@@ -1,0 +1,26 @@
+# Redis metrics for Prometheus.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: redis-exporter
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  sources:
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: prometheus-redis-exporter
+      targetRevision: 6.32.1
+      helm:
+        releaseName: redis-exporter
+        valueFiles:
+          - $values/platform/observability/redis-exporter-values.yaml
+    - repoURL: https://github.com/vijaykumarbirru/vijaybank-kubernetes.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: middleware
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }

@@ -13,7 +13,8 @@ kind cluster "vijaybank" (1 control-plane + 2 workers)          local registry l
 ├─ argocd       Argo CD: syncs everything below from this Git repo
 ├─ middleware   PostgreSQL, Redis, RabbitMQ, MongoDB (StatefulSets)
 ├─ vijaybank    13 services + web frontend + seed Job (one Helm chart / Argo app each)
-└─ observability OpenTelemetry Collector, Jaeger (traces), Prometheus Operator + Prometheus + Grafana
+└─ observability OpenTelemetry Collector, Jaeger, Prometheus Operator + Prometheus + Grafana,
+                 exporters + health probes, VijayBank dashboards, Request Explorer
 ```
 
 ## Layout
@@ -24,9 +25,10 @@ kind cluster "vijaybank" (1 control-plane + 2 workers)          local registry l
 | `charts/generic-application/` | Shared Helm templates used by every service ([charts/README.md](charts/README.md)) |
 | `charts/<service>/` | Thin chart per service: `values.yaml` (wiring) + `values-kind.yaml` (local settings) |
 | `charts/middleware/` | Data stores |
+| `charts/observability-config/` | ServiceMonitors, health probes, Grafana dashboards + alert, Request Explorer |
 | `platform/` | Gateway API CRDs, Traefik and Argo CD values (official charts, pinned versions) |
 | `argocd/` | Root "app of apps" + one Application per component, ApplicationSet for the services |
-| `kind/`, `scripts/` | Cluster definition and helper scripts |
+| `kind/`, `scripts/` | Cluster definition and helper scripts (`build-dashboards.py` regenerates the dashboards) |
 
 ## Quick start
 
@@ -63,6 +65,7 @@ with plain Helm.
 | http://argocd.localhost | Argo CD. User `admin`, password: `kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' \| base64 -d` |
 | http://grafana.localhost | Grafana (no login): Prometheus, Jaeger and read-only Postgres data sources |
 | http://prometheus.localhost | Prometheus |
+| http://explorer.localhost | Request Explorer: replays a real request hop by hop (Traefik → pods → data stores), with pod, node, Service IP and network layers |
 | http://jaeger.localhost | Jaeger: every request as a trace (Traefik → nginx → gateway → services → data stores) |
 | http://rabbitmq.localhost | RabbitMQ UI. User `vijaybank`, password: `kubectl -n middleware get secret rabbitmq-credentials -o jsonpath='{.data.password}' \| base64 -d` |
 

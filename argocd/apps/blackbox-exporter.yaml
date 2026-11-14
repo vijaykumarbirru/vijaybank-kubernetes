@@ -1,0 +1,26 @@
+# Health checks: probes every service's /health/ready (targets in charts/observability-config).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: blackbox-exporter
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  sources:
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: prometheus-blackbox-exporter
+      targetRevision: 11.21.3
+      helm:
+        releaseName: blackbox-exporter
+        valueFiles:
+          - $values/platform/observability/blackbox-exporter-values.yaml
+    - repoURL: https://github.com/vijaykumarbirru/vijaybank-kubernetes.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: observability
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }

@@ -1,0 +1,24 @@
+# Calls /health/ready on every service (the web frontend: /) every 15 s.
+# The service label comes from the URL: http://auth-service.vijaybank... -> service="auth-service".
+apiVersion: monitoring.coreos.com/v1
+kind: Probe
+metadata:
+  name: bank-services
+  labels:
+    app.kubernetes.io/part-of: vijaybank
+spec:
+  jobName: bank-services
+  interval: 15s
+  module: http_2xx
+  prober:
+    url: {{ .Values.probes.prober }}
+  targets:
+    staticConfig:
+      static:
+        {{- range $svc, $port := .Values.probes.targets }}
+        - http://{{ $svc }}.{{ $.Values.probes.namespace }}.svc.cluster.local:{{ $port }}{{ if eq $svc "web-frontend" }}/{{ else }}/health/ready{{ end }}
+        {{- end }}
+      relabelingConfigs:
+        - sourceLabels: [__param_target]
+          regex: 'http://([^.]+)\..*'
+          targetLabel: service

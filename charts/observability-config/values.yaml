@@ -3,3 +3,35 @@ collector:
   # App metrics + span metrics exposed by the OTel Collector's Prometheus exporter.
   serviceName: otel-collector
   port: promexporter
+
+rabbitmq:
+  # RabbitMQ's built-in Prometheus plugin (port 15692) in namespace middleware.
+  namespace: middleware
+  service: rabbitmq
+
+# Health checks through the Blackbox exporter: probe_success{job="bank-services", service="..."}
+probes:
+  prober: blackbox-exporter.observability.svc.cluster.local:9115
+  namespace: vijaybank
+  targets:
+    api-gateway: 8000
+    auth-service: 8081
+    customer-service: 8082
+    account-service: 8083
+    ledger-service: 8084
+    transfer-service: 8085
+    fraud-service: 8086
+    notification-service: 8087
+    audit-service: 8088
+    statement-service: 8089
+    payment-service: 8090
+    card-service: 8091
+    settlement-worker: 8092
+    web-frontend: 8080
+
+# Request Explorer: replays real traces from Jaeger as hops between pods.
+requestExplorer:
+  enabled: true
+  image: nginxinc/nginx-unprivileged:1.27-alpine
+  hostname: explorer.localhost
+  gateway: { name: main, namespace: traefik }

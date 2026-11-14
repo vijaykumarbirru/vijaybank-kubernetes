@@ -1,0 +1,11 @@
+# PostgreSQL metrics (connections, transactions, locks, database sizes).
+# Runs next to the database in namespace middleware, so it can read the superuser Secret.
+config:
+  datasource:
+    host: postgres.middleware.svc.cluster.local
+    user: postgres
+    database: postgres
+    sslmode: disable
+    passwordSecret: { name: postgres-credentials, key: postgres-password }
+serviceMonitor: { enabled: true }
+resources: { requests: { cpu: 10m, memory: 24Mi }, limits: { memory: 96Mi } }
