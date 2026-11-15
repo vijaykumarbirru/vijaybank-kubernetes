@@ -13,6 +13,8 @@ VijayBank on Kubernetes
 
 <img width="3024" height="1660" alt="image" src="https://github.com/user-attachments/assets/9f7cfd95-37bb-4eff-ade1-ecdc7981aba0" />
 
+<img width="2420" height="916" alt="image" src="https://github.com/user-attachments/assets/204bbb39-a79e-4aec-bc58-b71e56d2c565" />
+
 
 
 
