@@ -1,5 +1,15 @@
-# VijayBank on Kubernetes
+<img width="2988" height="1646" alt="image" src="https://github.com/user-attachments/assets/cb2dac38-6be9-47a2-afae-93f3421fdc0f" /># VijayBank on Kubernetes
 <img width="3024" height="1732" alt="image" src="https://github.com/user-attachments/assets/9a3b7e1c-12ba-47ef-b23c-a5bcf51aa586" />
+
+<img width="2988" height="1646" alt="image" src="https://github.com/user-attachments/assets/9c519088-554c-4b1e-8da2-c6239d7683b1" />
+
+<img width="3024" height="1454" alt="image" src="https://github.com/user-attachments/assets/91141201-3334-406c-b441-f035a2ec7aec" />
+
+<img width="3004" height="1648" alt="image" src="https://github.com/user-attachments/assets/6bd5b09a-f303-44b4-af34-4802995c5020" />
+
+<img width="3024" height="1648" alt="image" src="https://github.com/user-attachments/assets/f8125a4b-2a36-4bce-b9a8-8ce8f3fce6d3" />
+
+<img width="3024" height="1650" alt="image" src="https://github.com/user-attachments/assets/c70f4e8c-96dc-4da7-9d14-6b53b4628bde" />
 
 
 The VijayBank net-banking microservices (fictional bank, demo data only) running on a local
