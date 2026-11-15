@@ -1,4 +1,6 @@
 # VijayBank on Kubernetes
+<img width="3024" height="1732" alt="image" src="https://github.com/user-attachments/assets/9a3b7e1c-12ba-47ef-b23c-a5bcf51aa586" />
+
 
 The VijayBank net-banking microservices (fictional bank, demo data only) running on a local
 **kind** cluster, packaged as **Helm** charts and deployed by **Argo CD** (GitOps).
