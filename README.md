@@ -82,11 +82,62 @@ with plain Helm.
 # Change a service: edit charts/<service>/values*.yaml, commit, push -> Argo CD rolls it out.
 # New code: rebuild + push the image with a new tag, then bump image.tag in values-kind.yaml.
 TAG=0.1.1 ./scripts/build-images.sh --push auth-service
+```
 
-# Stop / start the cluster (keeps all data)
+## Stop and start
+
+### Option 1: pause and resume (keeps all data)
+
+Databases, traces, metrics, Argo CD state and images all survive.
+
+**Stop**
+
+```bash
+# 1. Stop the 3 cluster nodes (all pods stop with them)
 docker stop vijaybank-control-plane vijaybank-worker vijaybank-worker2
+
+# 2. (optional) stop the local image registry too
+docker stop vijaybank-registry
+```
+
+This frees about 8 GB of Docker Desktop memory; you can then quit Docker Desktop.
+
+**Start**
+
+```bash
+# 1. Start Docker Desktop first (if it was quit), then the registry before the nodes
+docker start vijaybank-registry
 docker start vijaybank-control-plane vijaybank-worker vijaybank-worker2
 
-# Delete it (registry and images stay)
-kind delete cluster --name vijaybank
+# 2. Wait for the nodes, then for the app pods (the Java services take ~2 minutes)
+kubectl --context kind-vijaybank wait --for=condition=Ready nodes --all --timeout=180s
+kubectl --context kind-vijaybank wait --for=condition=Ready pods --all -n vijaybank --timeout=600s \
+  --field-selector=status.phase!=Succeeded
+
+# 3. Check
+kubectl --context kind-vijaybank -n argocd get applications      # all Synced / Healthy
+python3 scripts/smoke-test.py                                      # 19 passed, 0 failed
 ```
+
+- The kind node containers **don't start by themselves** after Docker Desktop restarts: always run the `docker start` lines.
+- The seed Job doesn't run again: customers, balances and history are kept.
+- Graphs show a gap for the time the cluster was stopped.
+- A few pods may restart once while PostgreSQL and RabbitMQ come up; they settle on their own.
+
+### Option 2: delete and rebuild (clean start)
+
+**Stop (delete)**
+
+```bash
+kind delete cluster --name vijaybank       # cluster, all data and volumes are removed
+docker rm -f vijaybank-registry            # (optional) the registry and its stored images
+```
+
+The code and this Git repo are not affected.
+
+**Start (rebuild)**
+
+Run the [Quick start](#quick-start) again (about 10 minutes). You get new random passwords,
+fresh demo customers and empty traces and metrics.
+
+Use option 1 day to day; option 2 to free disk space or start clean.
