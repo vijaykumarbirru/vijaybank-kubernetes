@@ -1,6 +1,6 @@
-<img width="2988" height="1646" alt="image" src="https://github.com/user-attachments/assets/cb2dac38-6be9-47a2-afae-93f3421fdc0f" /># VijayBank on Kubernetes
+VijayBank on Kubernetes
 <img width="3024" height="1732" alt="image" src="https://github.com/user-attachments/assets/9a3b7e1c-12ba-47ef-b23c-a5bcf51aa586" />
-
+<img width="2988" height="1646" alt="image" src="https://github.com/user-attachments/assets/cb2dac38-6be9-47a2-afae-93f3421fdc0f" /># 
 <img width="2988" height="1646" alt="image" src="https://github.com/user-attachments/assets/9c519088-554c-4b1e-8da2-c6239d7683b1" />
 
 <img width="3024" height="1454" alt="image" src="https://github.com/user-attachments/assets/91141201-3334-406c-b441-f035a2ec7aec" />
