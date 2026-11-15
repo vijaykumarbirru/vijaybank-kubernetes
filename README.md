@@ -18,6 +18,7 @@ kind cluster "vijaybank" (1 control-plane + 2 workers)          local registry l
 ├─ vijaybank    13 services + web frontend + seed Job (one Helm chart / Argo app each)
 └─ observability OpenTelemetry Collector, Jaeger, Prometheus Operator + Prometheus + Grafana,
                  exporters + health probes, VijayBank dashboards, Request Explorer
+                 (+ traces and app metrics to Elastic Cloud as <service>-kubernetes)
 ```
 
 ## Layout
@@ -44,7 +45,8 @@ Needs Docker Desktop (~8 GB memory for the cluster), `kind`, `kubectl`, `helm`.
 # 2. Build the images and push them to the local registry
 ./scripts/build-images.sh --push
 
-# 3. Passwords (random, created once, never stored in Git)
+# 3. Passwords (random, created once, never stored in Git). For the Elastic Cloud export,
+#    first copy .env.example to .env (git-ignored) and fill in your endpoint and API key.
 ./scripts/create-secrets.sh
 
 # 4. Gateway API + Traefik + Argo CD

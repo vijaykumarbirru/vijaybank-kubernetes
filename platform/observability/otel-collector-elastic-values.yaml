@@ -1,0 +1,39 @@
+# Extra destination: Elastic Cloud (traces + the services' OTLP metrics), on top of Jaeger and
+# Prometheus. Loaded after otel-collector-values.yaml (maps merge, so only new pieces are added).
+# Endpoint and API key come from the Secret elastic-otlp (scripts/create-secrets.sh reads them from
+# the git-ignored .env); they are never in Git. To turn Elastic off, remove this file from
+# argocd/apps/otel-collector.yaml.
+extraEnvs:
+  - name: ELASTIC_OTLP_ENDPOINT
+    valueFrom: { secretKeyRef: { name: elastic-otlp, key: endpoint } }
+  - name: ELASTIC_OTLP_AUTH
+    valueFrom: { secretKeyRef: { name: elastic-otlp, key: authorization } }   # "ApiKey <encoded-key>"
+
+alternateConfig:
+  processors:
+    # Only on the Elastic pipelines: auth-service -> auth-service-kubernetes, so these services are
+    # told apart from the Docker Compose version's in the same Elastic project. Jaeger and
+    # Prometheus keep the plain names.
+    transform/elastic:
+      error_mode: ignore
+      trace_statements:
+        - 'set(resource.attributes["service.name"], Concat([resource.attributes["service.name"], "kubernetes"], "-")) where resource.attributes["service.name"] != nil'
+      metric_statements:
+        - 'set(resource.attributes["service.name"], Concat([resource.attributes["service.name"], "kubernetes"], "-")) where resource.attributes["service.name"] != nil'
+  exporters:
+    otlp_http/elastic:
+      endpoint: ${env:ELASTIC_OTLP_ENDPOINT}
+      headers:
+        Authorization: ${env:ELASTIC_OTLP_AUTH}
+  service:
+    pipelines:
+      traces/elastic:
+        receivers: [otlp]
+        processors: [memory_limiter, k8s_attributes, transform/elastic, batch]
+        exporters: [otlp_http/elastic]
+      # App metrics only (OTLP). Elastic APM computes its own RED metrics from spans,
+      # so span metrics are not sent.
+      metrics/elastic:
+        receivers: [otlp]
+        processors: [memory_limiter, k8s_attributes, transform/elastic, batch]
+        exporters: [otlp_http/elastic]

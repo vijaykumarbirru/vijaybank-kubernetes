@@ -16,6 +16,7 @@ spec:
         releaseName: otel-collector
         valueFiles:
           - $values/platform/observability/otel-collector-values.yaml
+          - $values/platform/observability/otel-collector-elastic-values.yaml   # Elastic Cloud (remove to turn off)
     - repoURL: https://github.com/vijaykumarbirru/vijaybank-kubernetes.git
       targetRevision: main
       ref: values

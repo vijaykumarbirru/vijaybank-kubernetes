@@ -7,6 +7,8 @@
 #   vijaybank/db-credentials          copy of the service DB passwords (pods can only read
 #   vijaybank/rabbitmq-credentials    Secrets in their own namespace)
 #   observability/grafana-postgres    read-only Postgres password for Grafana's business dashboards
+#   observability/elastic-otlp        Elastic Cloud endpoint + API key, from the git-ignored .env
+#                                     (only if .env has them; see .env.example)
 set -euo pipefail
 CTX="${KUBE_CONTEXT:-kind-vijaybank}"
 k() { kubectl --context "$CTX" "$@"; }
@@ -51,6 +53,21 @@ fi
 if ! exists observability grafana-postgres; then
   k -n observability create secret generic grafana-postgres \
     --from-literal=password="$(read_key middleware postgres-credentials grafana-ro)"
+fi
+
+# Elastic Cloud export (optional). Values are read line by line (not with `source`, which would
+# split "ApiKey <key>" at the space) and go straight into the Secret.
+ENV_FILE="$(dirname "$0")/../.env"
+env_value() { grep -E "^$1=" "$ENV_FILE" 2>/dev/null | tail -1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//'; }
+if [[ -f "$ENV_FILE" ]] && [[ -n "$(env_value ELASTIC_OTLP_ENDPOINT)" ]]; then
+  # Re-created each run so a rotated key in .env takes effect (then restart the collector).
+  k -n observability create secret generic elastic-otlp \
+    --from-literal=endpoint="$(env_value ELASTIC_OTLP_ENDPOINT)" \
+    --from-literal=authorization="$(env_value ELASTIC_OTLP_AUTH)" \
+    --dry-run=client -o yaml | k apply -f - >/dev/null
+  echo "elastic-otlp Secret updated from .env"
+else
+  echo "no ELASTIC_OTLP_ENDPOINT in .env: Elastic export not configured (the collector will wait for the elastic-otlp Secret)"
 fi
 
 k -n middleware get secrets
